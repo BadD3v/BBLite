@@ -1,4 +1,4 @@
-## Contents:
+Contents:
 BBLitePack
   └── Instructions
   └── BBLite
@@ -13,7 +13,7 @@ BBLitePack
                     └── DataId
 
 ---
-## Setup:
+Setup:
 In BBLite_Functions, open up BBConfig. In it, there are already set values/tables. All data in BBLite as of your download is mandatory for it to work.
 You can store anything you want inside of Config.Data{}. Luckily due to the way it's coded, even math.random() can work fine in it, Int's, Floats, Strings, the list goes on to BBLite's capabilites.
 Your defualt schema should look a little something like this, this data can, but very unlikely, get changed as the versions go on and I update/improve BBLite:
@@ -76,7 +76,7 @@ Config.Data = {
 }
 
 ---
-## Features
+Features
 
 This version of BBLite, includes {
   | **🔁 Version Management**      | BBLite auto-patches old saves using `ResolveConflicts` and tracks schema version via `Version` field.                         |
