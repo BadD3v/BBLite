@@ -1,0 +1,3 @@
+## Yo...
+So i accidently made the permanent file name of one [CURRENT], it's not, it really isnt.
+The current working version will always be the one in the **Main Branch**., So even if you see a version with a higher number in this branch, versions, and it's not in Main, than that means it code be a bugged version, beta/alpha version, or just a testing version.
