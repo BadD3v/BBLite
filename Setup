@@ -1,0 +1,105 @@
+## Contents:
+BBLitePack
+  └── Instructions
+  └── BBLite
+        └── License
+        └── BBLite_Functions
+              └── IndexModule
+              └── CurrentSlot
+              └── KeyFolder
+              |     └── ChangeKey
+              |     └── Key
+              └── BBConfig
+                    └── DataId
+
+---
+## Setup:
+In BBLite_Functions, open up BBConfig. In it, there are already set values/tables. All data in BBLite as of your download is mandatory for it to work.
+You can store anything you want inside of Config.Data{}. Luckily due to the way it's coded, even math.random() can work fine in it, Int's, Floats, Strings, the list goes on to BBLite's capabilites.
+Your defualt schema should look a little something like this, this data can, but very unlikely, get changed as the versions go on and I update/improve BBLite:
+
+Config.Data = {
+	Version = "",
+	UserInfo = {
+		Name = "",
+		UserId = 0,
+
+		PrivateInformation = {
+			Password = "";
+			UUID = ""
+		};
+	};
+	SaveLog = {},
+	Sessions = {},
+	Locked = false,
+}
+
+This schema can get changed into anything you please, aslong as you dont rename/delete the current values shown above/in studio.
+
+Config.Data = {
+	Version = "",
+	UserInfo = {
+  	Name = "",
+  	UserId = 0,
+  	Level = 5,
+  	Beli = 1000,
+  	PrivateInformation = {
+  		Password = "",
+  		UUID = "",
+  		Developer = false,
+  		ContentCreator = false,
+  		IPAddress = "192.168.1.1",
+  	},
+  	Inventory = {
+  		Tools = { "Katana", "Hook" },
+  		Items = {
+  			Apple = 5,
+  			Gold = 1
+  		}
+  	}
+  },
+  SaveTags = { "VIP", "OldSave" },
+  Stats = {
+  	Kills = 0,
+  	Deaths = 0,
+  	Playtime = 0
+  },
+  Settings = {
+  	Music = true,
+  	FX = true,
+  	Lang = "en-US"
+  }
+  
+  	SaveLog = {},
+  	Sessions = {},
+  	Locked = false,
+}
+
+---
+## Features
+
+This version of BBLite, includes {
+  | **🔁 Version Management**      | BBLite auto-patches old saves using `ResolveConflicts` and tracks schema version via `Version` field.                         |
+  | **🔐 UUID/Password Support**   | `UserInfo.PrivateInformation.UUID` is used for identifying a save uniquely across slots/users.                                |
+  | **🧠 Player Metadata**         | Tracks `Name`, `UserId`, and update timestamps under `UserInfo`.                                                              |
+  | **📜 Save Logs**               | `SaveLog` is an append-only log that tracks what action happened and when.                                                    |
+  | **🧰 Session Pruning**         | `Sessions` can hold session data (like login history, playtime, devices, etc.). BBLite trims this if it exceeds `n` entries.  |
+  | **🔒 Lock Handling**           | `Locked = true` will prevent further saves until unlocked manually.                                                           |
+  | **🧼 Sanitization & Patch**    | Missing fields in saves get automatically patched at load time via `SanitizeSave`, `PatchOldVersion`, and `ResolveConflicts`. |
+  | **🧠 Deep Field Tools**        | You can `PatchField`, `GetField`, `CopyField`, or `CleanField` even nested ones like `UserInfo.PrivateInformation.Password`.  |
+  | **📊 Slot Comparison**         | `CompareSlots` will check if two slots are functionally identical (after JSON encoding).                                      |
+  | **🔁 Autosave + Tamper Check** | System can detect stale saves or tampering and auto-save when needed.                                                         |
+}
+
+Lets say I want to use.. hmm.... Slot Comparison?
+Simply in a ServerScript, you'll use DataModule.CompareSlots( .., .., ..).
+If I wanted to compare my first slot and second slot, for maybe an easter egg, than id do a little something like:
+
+if DataModule.CompareSlots(userId, 1, 3) then
+  print("YAY, NICE LUCK")
+else
+  print("... You suck")
+end
+
+---
+I believe that wrapped it up, of course there are more in-depth functions to use, but those are the main ones to use.
