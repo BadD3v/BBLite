@@ -38,7 +38,7 @@ BBLite was designed to support complex save architectures in multiplayer games, 
 **Setup**  
 Place BBLitePack in ServerScriptService, foldered or not. Opening BBConfig brings you to a simplistic Schema to use. All values/data added into the Schema as of installation are **MANDATORY** for BBLite to work.
 
-all you need to customize is the BBConfig script, and the system does the rest. Despite the automatically made database system, there are over 50 functions as of **Version 1.4.2**!
+all you need to customize is the BBConfig script, and the system does the rest. Despite the automatically made database system, there are over 50 functions as of **Version 1.4.3**!
 ---
 
 **Licensing**  
