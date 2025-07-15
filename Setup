@@ -1,6 +1,9 @@
 Contents:
 BBLitePack
   └── Instructions
+  |     └── AboutBBLite
+  |     └── VersionDownload
+  |     └── Setup
   └── BBLite
         └── License
         └── BBLite_Functions
