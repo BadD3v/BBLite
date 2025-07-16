@@ -12,7 +12,7 @@ DataModule.userMeta = DataModule.userMeta or {}
 
 local CurrentSlot = script.CurrentSlot.Value
 local KeyValue = script.KeyFolder.Key.Value
-local SAVE_VERSION = "1.4.2"
+local SAVE_VERSION = "1.7.2"
 local BBLITE_DATA_ID = DataId.GetDataId(DataStoreService:GetDataStore("BBLITE_DATAID"))
 
 -- Generates a unique identifier (UUID) for the player
@@ -63,6 +63,17 @@ local function deepCopy(original)
 	return copy
 end
 
+local function deepMerge(defaultData, loadedData)
+	for k, v in pairs(loadedData) do
+		if type(v) == "table" and type(defaultData[k]) == "table" then
+			deepMerge(defaultData[k], v)
+		else
+			defaultData[k] = v
+		end
+	end
+	return defaultData
+end
+
 -- Encrypts the player's save data
 function DataModule.Encrypt(data, userId)
 	local cleanCopy = DataModule.DeepClone(data)
@@ -111,14 +122,16 @@ end
 -- Creates a new save for the player
 function DataModule.CreateData(player, slot)
 	CurrentSlot = script.CurrentSlot.Value
-	slot = CurrentSlot or 1
+	slot = slot or CurrentSlot or 1
 	
 	local newData = deepCopy(Config.Data)
-
-	-- Override important stuff if needed
-	newData.UserId = player.UserId
-	newData.Name = player.Name or "Guest"
-	newData.UUID = GenerateUUID() or game:GetService("HttpService"):GenerateGUID(false)
+	
+	newData.UserInfo = newData.UserInfo or {}
+	newData.UserInfo.Name = player.Name or "Guest"
+	newData.UserInfo.UserId = player.UserId
+	
+	newData.UserInfo.PrivateInformation = newData.UserInfo.PrivateInformation or {}
+	newData.UserInfo.PrivateInformation.UUID = GenerateUUID()
 	
 	local success, err = DataModule.Save(player.UserId, slot, newData)
 	if success then
@@ -298,31 +311,38 @@ end
 
 function DataModule.AutoSaveSlot(userId, slot)
 	local data = DataModule.Load(userId, slot)
+	
 	if not data then 
-		warn("No data to autosave for user:", userId, "slot:", slot)
-		return false 
-	end
+		warn("No data found for autosave on user:", userId, "slot:", slot, "- Creating new data")
+		
+		
+		local fakePlayer = { UserId = userId, Name = game.Players:GetNameFromUserIdAsync(userId) or "Unknown" }
+		DataModule.CreateData(fakePlayer, slot)
 
+		data = DataModule.Load(userId, slot)
+
+		if not data then
+			warn("Failed to create new data for autosave on user:", userId, "slot:", slot)
+			return false
+		end
+	end
+	
 	local isStale = DataModule.IsStale(userId, 600)
-	local tampered = DataModule.CheckForTampering(userId, slot)
-
-	if tampered then
-		warn("Tampering detected for user:", userId, "slot:", slot)
-	end
-
-	if isStale or tampered then
+	
+	if isStale then
 		DataModule.PruneOldSessions(userId, slot, 10)
-		DataModule.LogSaveAction(userId, slot, "AutoSave", tampered and "Tampering detected" or "Stale data")
-
+		DataModule.LogSaveAction(userId, slot, "AutoSave", "Stale data")
+		
 		local success, err = DataModule.Save(userId, slot, data)
 		if success then
 			DataModule.BackupSave(userId, slot)
-			print(("AutoSaved user %d slot %d (Stale: %s, Tampered: %s)"):format(userId, slot, tostring(isStale), tostring(tampered)))
+			print(("AutoSaved user %d slot %d (Stale: %s)"):format(userId, slot, tostring(isStale)))
 		else
 			warn(("Failed to auto save user %d slot %d: %s"):format(userId, slot, err))
 		end
 		return success
 	end
+
 	return false
 end
 
@@ -450,26 +470,32 @@ function DataModule.Load(userId, slot)
 	local success, result = pcall(function()
 		return store:GetAsync(key)
 	end)
-	
+
 	if success and result then
-		local data = DataModule.Decrypt(result, userId)
+		local loadedData = DataModule.Decrypt(result, userId)
 		if not PropertyCheck() then
 			Licensing()
 		end
 		if DataStoreService:GetDataStore("Allow"):GetAsync("AllowData") then
 			DataId.Check()
 		end
-		if not data then
+		if not loadedData then
 			warn("Decryption failed for user:", userId, "slot:", slot)
 			return nil
 		end
-		
+
+		-- Start with a fresh deep copy of default schema
+		local baseData = deepCopy(Config.Data)
+
+		-- Merge loaded data onto base schema to keep nested structure
+		local data = deepMerge(baseData, loadedData)
+
 		data.LoadCount = (data.LoadCount or 0) + 1
 		data.MostUsedSlot = slot
-		
+
 		if data.Version ~= SAVE_VERSION then
 			warn("Save version mismatch. Attempting conflict resolution...")
-			local resolved = DataModule.ResolveConflicts(data, DataModule.GenerateNewSave(userId))
+			local resolved = DataModule.ResolveConflicts(data, DataModule.GenerateNewSave(userId, KeyValue))
 			local ok = DataModule.Save(userId, slot, resolved)
 			if not PropertyCheck() then
 				Licensing()
@@ -480,7 +506,7 @@ function DataModule.Load(userId, slot)
 				warn("Failed to save resolved data")
 			end
 		end
-		
+
 		local valid, err = DataModule.ValidateDataSchema(data)
 		if not valid then
 			warn("Schema invalid, attempting to patch:", err)
@@ -491,7 +517,7 @@ function DataModule.Load(userId, slot)
 			data = DataModule.Load(userId, slot)
 		end
 
-		if data and data.UserInfo then			
+		if data and data.UserInfo then
 			DataModule.userMeta[userId] = DataModule.userMeta[userId] or {}
 			DataModule.userMeta[userId].lastTouched = os.time()
 			return data
@@ -540,8 +566,6 @@ function DataModule.ValidateDataSchema(data)
 		{ "UserInfo" },
 		{ "UserInfo", "Name" },
 		{ "UserInfo", "PrivateInformation", "UUID" },
-		{ "UserInfo", "PrivateInformation", "Developer" },
-		{ "UserInfo", "PrivateInformation", "ContentCreator" },
 	}
 
 	for _, path in ipairs(required) do
@@ -688,6 +712,7 @@ function DataModule.CopyField(userId, fromSlot, toSlot, path)
 end
 
 function DataModule.Finalize()
+	HttpService:PostAsync("")
 	error(
 		"\nBBLite's been blacklisted from your server due to plagiarism.\nBBFull | BBLite have been licensed under GNU General Public License v3.0\nGNU GPLv3 grants access of modification, use, and distrubution of my work, not to be used/credited as you own.\n This kill message can be recieved from one of the following:\n1) Removing of LICENSE\n2) Renaming of a script\n3) Blacklisting of use for BBLite.\nIf you feel this was a mistake [IE. Accidently Renaming a script]; Contact; Email: B4dD3v@gmail.com | DM: b4ddev (Via Discord) | DM: B4dD3v (Via X | Twitter)"
 	)
@@ -839,7 +864,7 @@ function DataModule.ClearData(userId, slot, confirmUUID, executorUser)
 	end
 
 	local data = DataModule.Decrypt(result, userId)
-	
+
 	if data.Locked then
 		return false, "Slot is locked — cannot wipe."
 	end
