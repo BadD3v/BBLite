@@ -4,7 +4,7 @@
 ---
 
 **Description**  
-BBLite is a structured database system for Roblox, built around schema correction, slot saving, and encrypted state management. Built with efficiency and developer extensibility in mind, BBLite avoids unnecessary abstractions while offering high flexibility for structured persistence and state validation. It is licensed under the **GNU General Public License v3.0**, with runtime enforcement of its licensing protections.
+BBLite is a structured database system for Roblox, built around schema correction, slot saving, and encrypted state management. Built with efficiency and developer extensibility in mind, BBLite avoids unnecessary abstractions while offering high flexibility for structured persistence and state validation. It is licensed under the **BBLite License**, with runtime enforcement of its licensing protections.
 -# This library is not designed for beginner use and assumes familiarity with Roblox’s DataStoreService, JSON encoding, metatables, and Lua serialization patterns.
 
 ---
@@ -42,5 +42,5 @@ all you need to customize is the BBConfig script, and the system does the rest. 
 ---
 
 **Licensing**  
-BBLite and BBFull are licensed under the **GNU General Public License v3.0 (GPLv3)**.  
+BBLite and BBFull are licensed under the **BBLite License**.  
 The license permits use, modification, and distribution with attribution.
